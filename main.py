@@ -28,16 +28,24 @@ def veri_oku():
             url,
             headers={
                 "X-Master-Key": JSONBIN_KEY,
-                "X-Bin-Meta":   "false"
+                "X-Bin-Meta": "false"
             },
             timeout=10
         )
+        print(f"OKUMA STATUS: {resp.status_code}")
+        print(f"OKUMA YANIT: {resp.text[:300]}")
+        
         if resp.status_code == 200:
             data = resp.json()
-            # Bazen jsonbin direkt veriyi, bazen record icinde dondurur
-            if "record" in data:
-                return data["record"]
-            return data
+            print(f"OKUMA DATA: {data}")
+            
+            # Farkli formatlari dene
+            if isinstance(data, dict):
+                if "record" in data:
+                    return data["record"]
+                if "playlists" in data:
+                    return data
+            return {"playlists": [], "m3u_url": ""}
     except Exception as e:
         print(f"OKUMA HATASI: {e}")
     return {"playlists": [], "m3u_url": ""}
