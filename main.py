@@ -16,8 +16,8 @@ app.add_middleware(
 )
 
 # ==================== AYARLAR ====================
-JSONBIN_ID  = "BURAYA_JSONBIN_ID_YAZ"
-JSONBIN_KEY = "BURAYA_JSONBIN_KEY_YAZ"
+JSONBIN_ID  = "6a530100f5f4af5e2982c769"
+JSONBIN_KEY = "$2a$10$mEKH6YEVi.0L4O2UFuU8LuP4e5MDauKOM/N09qQn.Wdfjb8NnOzhq"
 JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{JSONBIN_ID}"
 
 # ==================== FONKSİYONLAR ====================
