@@ -17,8 +17,8 @@ app.add_middleware(
 
 # ==================== AYARLAR ====================
 # Render.com Environment Variables'dan okur
-JSONBIN_ID  = os.environ.get("6a530100f5f4af5e2982c769", "")
-JSONBIN_KEY = os.environ.get("$2a$10$mEKH6YEVi.0L4O2UFuU8LuP4e5MDauKOM/N09qQn.Wdfjb8NnOzhq", "")
+JSONBIN_ID  = "6a530100f5f4af5e2982c769"
+JSONBIN_KEY = "$2a$10$mEKH6YEVi.0L4O2UFuU8LuP4e5MDauKOM/N09qQn.Wdfjb8NnOzhq"
 
 # ==================== FONKSİYONLAR ====================
 def veri_oku():
