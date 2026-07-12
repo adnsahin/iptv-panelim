@@ -16,34 +16,27 @@ app.add_middleware(
 )
 
 # ==================== AYARLAR ====================
-GIST_ID = os.environ.get("0711dfba4936dc2c74e360d4255b14c9", "")
-GITHUB_TOKEN = os.environ.get("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", "")
+JSONBIN_ID = os.environ.get("6a52fb4fda38895dfe5131a0", "")
+JSONBIN_KEY = os.environ.get("$2a$10$mEKH6YEVi.0L4O2UFuU8LuP4e5MDauKOM/N09qQn.Wdfjb8NnOzhq", "")
+JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{JSONBIN_ID}"
+HEADERS = {
+    "X-Master-Key": JSONBIN_KEY,
+    "Content-Type": "application/json"
+}
 
-# ==================== GIST FONKSİYONLARI ====================
+# ==================== JSONBin FONKSİYONLARI ====================
 def veri_oku():
     try:
-        url = f"https://api.github.com/gists/{GIST_ID}"
-        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-        resp = requests.get(url, headers=headers, timeout=10)
+        resp = requests.get(JSONBIN_URL, headers=HEADERS, timeout=10)
         if resp.status_code == 200:
-            content = resp.json()["files"]["playlist.json"]["content"]
-            return json.loads(content)
+            return resp.json()["record"]
     except:
         pass
     return {"playlists": [], "m3u_url": ""}
 
 def veri_kaydet(data):
     try:
-        url = f"https://api.github.com/gists/{GIST_ID}"
-        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-        payload = {
-            "files": {
-                "playlist.json": {
-                    "content": json.dumps(data, ensure_ascii=False, indent=2)
-                }
-            }
-        }
-        requests.patch(url, headers=headers, json=payload)
+        requests.put(JSONBIN_URL, headers=HEADERS, json=data, timeout=10)
     except:
         pass
 
@@ -288,11 +281,8 @@ def panel():
 
         <script>
             const BASE_URL = window.location.origin;
-
-            // TV linkini ayarla
             document.getElementById('tv-link').textContent = BASE_URL + '/get';
 
-            // Sayfa acildiginda verileri yukle
             window.onload = function() {
                 verileriYukle();
             };
