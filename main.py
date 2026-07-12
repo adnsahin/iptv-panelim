@@ -346,114 +346,138 @@ def panel():
         </div>
 
         <script>
-            const BASE_URL = window.location.origin;
-            document.getElementById('tv-link').textContent = BASE_URL + '/get';
+    const BASE_URL = window.location.origin;
+    document.getElementById('tv-link').textContent = BASE_URL + '/get';
 
-            window.onload = verileriYukle;
+    // Sayfa yuklenince calistir
+    document.addEventListener('DOMContentLoaded', function() {
+        verileriYukle();
+    });
 
-            function verileriYukle() {
-                fetch('/api/data')
-                    .then(r => r.json())
-                    .then(data => {
-                        durumGuncelle(data.m3u_url);
-                        listeGuncelle(data.playlists || [], data.m3u_url);
-                    })
-                    .catch(e => {
-                        document.getElementById('durum').textContent = '❌ Baglanti hatasi: ' + e;
-                    });
+    // Eger DOMContentLoaded calismadiysa da dene
+    setTimeout(verileriYukle, 500);
+
+    function verileriYukle() {
+        console.log('Veri yukleniyor...');
+        fetch('/api/data')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                console.log('Gelen data:', JSON.stringify(data));
+                durumGuncelle(data.m3u_url || '');
+                listeGuncelle(data.playlists || [], data.m3u_url || '');
+            })
+            .catch(function(e) {
+                console.log('Hata:', e);
+                document.getElementById('durum').textContent = 'Baglanti hatasi: ' + e;
+                document.getElementById('durum').style.color = '#ff4757';
+                document.getElementById('durum').style.borderColor = '#ff4757';
+            });
+    }
+
+    function durumGuncelle(aktifUrl) {
+        const el = document.getElementById('durum');
+        if (aktifUrl && aktifUrl.length > 0) {
+            el.style.color       = '#00ff88';
+            el.style.borderColor = '#00ff88';
+            el.textContent       = '● AKTIF PLAYLIST MEVCUT';
+        } else {
+            el.style.color       = '#ff4757';
+            el.style.borderColor = '#ff4757';
+            el.textContent       = '● PLAYLIST EKLENMEDI';
+        }
+    }
+
+    function listeGuncelle(playlists, aktifUrl) {
+        const el = document.getElementById('liste-container');
+        if (!playlists || playlists.length === 0) {
+            el.innerHTML = '<p class="bos">Henuz playlist eklenmedi</p>';
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < playlists.length; i++) {
+            var p = playlists[i];
+            var aktifBadge = (p.url === aktifUrl) ? '<span style="color:#00ff88;font-size:11px;">✅ AKTIF</span>' : '';
+            html += '<div class="playlist-item">';
+            html += '<div class="playlist-info">';
+            html += '<strong>' + p.isim + ' ' + aktifBadge + '</strong>';
+            html += '<small>' + p.url + '</small>';
+            html += '<small>' + (p.tarih || '') + '</small>';
+            html += '</div>';
+            html += '<div class="playlist-actions">';
+            html += '<button class="btn-aktif" onclick="aktifYap(' + i + ')">Aktif</button>';
+            html += '<button class="btn-sil" onclick="sil(' + i + ')">🗑️</button>';
+            html += '</div>';
+            html += '</div>';
+        }
+        el.innerHTML = html;
+    }
+
+    function mesajGoster(metin, tip) {
+        var el = document.getElementById('mesaj');
+        el.textContent = metin;
+        el.className = tip;
+        el.style.display = 'block';
+        setTimeout(function() { el.style.display = 'none'; }, 3000);
+    }
+
+    function ekle() {
+        var isim = document.getElementById('isim').value.trim();
+        var url  = document.getElementById('url').value.trim();
+
+        if (!isim) {
+            mesajGoster('Playlist adi bos olamaz', 'hata');
+            return;
+        }
+        if (!url.startsWith('http')) {
+            mesajGoster('Gecerli bir link girin', 'hata');
+            return;
+        }
+
+        fetch('/api/ekle', {
+            method:  'POST',
+            headers: {'Content-Type': 'application/json'},
+            body:    JSON.stringify({isim: isim, url: url})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            console.log('Ekle sonucu:', JSON.stringify(d));
+            if (d.durum === 'ok') {
+                mesajGoster('✅ Playlist basariyla eklendi!', 'basari');
+                document.getElementById('isim').value = '';
+                document.getElementById('url').value  = '';
+                setTimeout(verileriYukle, 1500);
+            } else {
+                mesajGoster('Eklenemedi, tekrar deneyin', 'hata');
             }
+        })
+        .catch(function(e) {
+            mesajGoster('Hata: ' + e, 'hata');
+        });
+    }
 
-            function durumGuncelle(aktifUrl) {
-                const el = document.getElementById('durum');
-                if (aktifUrl) {
-                    el.style.color       = '#00ff88';
-                    el.style.borderColor = '#00ff88';
-                    el.textContent       = '● AKTIF PLAYLIST MEVCUT';
-                } else {
-                    el.style.color       = '#ff4757';
-                    el.style.borderColor = '#ff4757';
-                    el.textContent       = '● PLAYLIST EKLENMEDI';
-                }
-            }
+    function aktifYap(index) {
+        fetch('/api/aktif/' + index, {method: 'POST'})
+            .then(function() { setTimeout(verileriYukle, 1500); });
+    }
 
-            function listeGuncelle(playlists, aktifUrl) {
-                const el = document.getElementById('liste-container');
-                if (!playlists.length) {
-                    el.innerHTML = '<p class="bos">Henuz playlist eklenmedi</p>';
-                    return;
-                }
-                el.innerHTML = playlists.map((p, i) => `
-                    <div class="playlist-item">
-                        <div class="playlist-info">
-                            <strong>${p.isim} ${p.url === aktifUrl ? '<span style="color:#00ff88;font-size:11px;">✅ AKTIF</span>' : ''}</strong>
-                            <small>${p.url}</small>
-                            <small>${p.tarih || ''}</small>
-                        </div>
-                        <div class="playlist-actions">
-                            <button class="btn-aktif" onclick="aktifYap(${i})">Aktif</button>
-                            <button class="btn-sil"   onclick="sil(${i})">🗑️</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
+    function sil(index) {
+        if (confirm('Bu playlist silinsin mi?')) {
+            fetch('/api/sil/' + index, {method: 'POST'})
+                .then(function() { setTimeout(verileriYukle, 1500); });
+        }
+    }
 
-            function mesajGoster(metin, tip) {
-                const el    = document.getElementById('mesaj');
-                el.textContent = metin;
-                el.className   = tip;
-                el.style.display = 'block';
-                setTimeout(() => el.style.display = 'none', 3000);
-            }
-
-            function ekle() {
-                const isim = document.getElementById('isim').value.trim();
-                const url  = document.getElementById('url').value.trim();
-                if (!isim) {
-                    mesajGoster('❌ Playlist adi bos olamaz', 'hata');
-                    return;
-                }
-                if (!url.startsWith('http')) {
-                    mesajGoster('❌ Gecerli bir link girin', 'hata');
-                    return;
-                }
-                fetch('/api/ekle', {
-                    method:  'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body:    JSON.stringify({isim, url})
-                })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.durum === 'ok') {
-                        mesajGoster('✅ Playlist basariyla eklendi!', 'basari');
-                        document.getElementById('isim').value = '';
-                        document.getElementById('url').value  = '';
-                        setTimeout(verileriYukle, 1000);
-                    } else {
-                        mesajGoster('❌ Eklenemedi, tekrar deneyin', 'hata');
-                    }
-                })
-                .catch(e => mesajGoster('❌ Hata: ' + e, 'hata'));
-            }
-
-            function aktifYap(index) {
-                fetch(`/api/aktif/${index}`, {method: 'POST'})
-                    .then(() => setTimeout(verileriYukle, 1000));
-            }
-
-            function sil(index) {
-                if (confirm('Bu playlist silinsin mi?')) {
-                    fetch(`/api/sil/${index}`, {method: 'POST'})
-                        .then(() => setTimeout(verileriYukle, 1000));
-                }
-            }
-
-            function kopyala() {
-                const link = document.getElementById('tv-link').textContent;
-                navigator.clipboard.writeText(link)
-                    .then(() => alert('✅ Kopyalandi:\n' + link))
-                    .catch(() => prompt('Linki kopyalayin:', link));
-            }
-        </script>
+    function kopyala() {
+        var link = document.getElementById('tv-link').textContent;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(link)
+                .then(function() { alert('Kopyalandi: ' + link); })
+                .catch(function() { prompt('Linki kopyalayin:', link); });
+        } else {
+            prompt('Linki kopyalayin:', link);
+        }
+    }
+</script>
     </body>
     </html>
     """
