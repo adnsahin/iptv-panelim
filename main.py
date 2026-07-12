@@ -203,7 +203,7 @@ def api_duzenle(index: int, body: dict):
 # ==================== WEB PANELİ ====================
 @app.get("/", response_class=HTMLResponse)
 def panel():
-    return """
+    return r"""
     <!DOCTYPE html>
     <html lang="tr">
     <head>
